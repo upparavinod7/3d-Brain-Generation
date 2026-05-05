@@ -1,0 +1,6 @@
+pydicom
+numpy
+opencv-python
+scipy
+pyvista
+matplotlib
