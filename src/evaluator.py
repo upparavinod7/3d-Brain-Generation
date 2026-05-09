@@ -10,4 +10,9 @@ def calculate_psnr(original, reconstructed):
     """
     return PSNR(original, reconstructed)
 
-# Add more metrics (Dice, SSIM) as needed
+def calcualte_ssim(original, reconstructed):
+    pass
+
+def calucalte_dice(original, reconstructed):
+    pass
+
