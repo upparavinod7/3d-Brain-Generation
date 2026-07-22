@@ -1,9 +1,9 @@
 import os
-import sys
 import argparse
+import sys
 
 # Ensure backend directory is in sys.path
-backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "backend"))
+backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend"))
 if backend_dir not in sys.path:
     sys.path.insert(0, backend_dir)
 
@@ -20,44 +20,18 @@ except ImportError:
     from app.services.marching_cubes import extract_3d_mesh, export_mesh_to_formats
     from app.services.pdf_generator import generate_clinical_pdf_report
 
-def main():
-    parser = argparse.ArgumentParser(description="3D Brain Generation AI Platform")
-    parser.add_argument("--serve", action="store_true", help="Start the FastAPI REST backend server")
-    parser.add_argument("--port", type=int, default=8000, help="Port to run backend server on")
-    args = parser.parse_args()
-
-    if args.serve:
-        print(f"Starting FastAPI Backend Server on http://localhost:{args.port}...")
-        import uvicorn
-        try:
-            from backend.app.main import app
-        except ImportError:
-            from app.main import app
-        uvicorn.run(app, host="0.0.0.0", port=args.port)
-        return
-
+def run_cli_pipeline(args):
     print("=" * 65)
-    print(" 3D Brain Generation AI Platform - Main Pipeline ")
+    print(" 3D Brain Generation AI Platform - Command Line Pipeline ")
     print("=" * 65)
     
-    raw_data_dir = os.path.join("data", "raw")
-    has_custom_dicom = os.path.exists(raw_data_dir) and len(os.listdir(raw_data_dir)) > 0
-    
-    if has_custom_dicom:
-        print(f"\n[1/5] Loading DICOM series from {raw_data_dir}...")
-        try:
-            from backend.app.services.dicom_loader import load_dicom_series, extract_dicom_volume
-        except ImportError:
-            from app.services.dicom_loader import load_dicom_series, extract_dicom_volume
-            
-        datasets = load_dicom_series(raw_data_dir)
-        vol, meta = extract_dicom_volume(datasets)
-        seg = segment_brain_tissue(vol)
-    else:
-        print("\n[1/5] Generating 3D High-Fidelity Synthetic Brain Volume (Demo Mode)...")
-        vol, seg, meta = generate_synthetic_3d_brain(shape=(64, 128, 128), has_lesion=True)
-
-    print(f" -> Volume shape: {vol.shape}, Pathology present: {meta.get('has_pathology', True)}")
+    print("\n[1/5] Generating/Loading 3D Brain MRI Volume...")
+    vol, seg, meta = generate_synthetic_3d_brain(
+        shape=(64, 128, 128),
+        spacing=(1.5, 1.0, 1.0),
+        has_lesion=not args.no_pathology
+    )
+    print(f" -> Volume shape: {vol.shape}, Pathology present: {meta['has_pathology']}")
     
     print("\n[2/5] Applying AI Medical Preprocessing (Normalization + CLAHE + Denoising)...")
     proc_vol = preprocess_medical_volume(vol)
@@ -73,19 +47,19 @@ def main():
     print(f" -> Pathology / Lesion: {stats['lesion_volume_cm3']} cm³ ({stats['percentages']['lesion']}%)")
     
     print("\n[4/5] Executing 3D Marching Cubes Iso-surface Surface Extraction...")
-    verts, faces, normals = extract_3d_mesh(proc_vol, iso_level=0.25)
+    verts, faces, normals = extract_3d_mesh(proc_vol, iso_level=args.iso_level)
     print(f" -> Mesh vertices: {len(verts)}, faces: {len(faces)}")
     
-    output_dir = "storage/outputs"
+    output_dir = args.output_dir
     os.makedirs(output_dir, exist_ok=True)
-    paths = export_mesh_to_formats(verts, faces, normals, base_filename="brain_3d_mesh", output_dir=output_dir)
+    paths = export_mesh_to_formats(verts, faces, normals, base_filename="cli_brain_mesh", output_dir=output_dir)
     print(f" -> Exported GLB: {paths['glb']}")
     print(f" -> Exported STL: {paths['stl']}")
     print(f" -> Exported OBJ: {paths['obj']}")
     
     print("\n[5/5] Generating Publication-Grade PDF Clinical Report...")
-    pdf_path = os.path.join(output_dir, "Clinical_Report.pdf")
-    generate_clinical_pdf_report("MAIN-DEMO-01", {"patient_id": "MAIN-USER", "modality": "MR T1"}, stats, pdf_path)
+    pdf_path = os.path.join(output_dir, "CLI_Clinical_Report.pdf")
+    generate_clinical_pdf_report("CLI-DEMO-01", {"patient_id": "CLI-USER", "modality": "MR T1"}, stats, pdf_path)
     print(f" -> Report generated: {pdf_path}")
     
     print("\n" + "=" * 65)
@@ -93,4 +67,10 @@ def main():
     print("=" * 65)
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description="3D Brain Generation CLI Pipeline")
+    parser.add_argument("--no-pathology", action="store_true", help="Generate normal brain without lesion")
+    parser.add_argument("--iso-level", type=float, default=0.25, help="Marching Cubes iso-surface threshold")
+    parser.add_argument("--output-dir", type=str, default="storage/outputs", help="Directory for generated artifacts")
+    
+    args = parser.parse_args()
+    run_cli_pipeline(args)

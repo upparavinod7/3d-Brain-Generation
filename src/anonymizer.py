@@ -1,21 +1,17 @@
+import os
+import sys
+
+backend_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "backend"))
+if backend_dir not in sys.path:
+    sys.path.insert(0, backend_dir)
+
+try:
+    from backend.app.services.anonymizer import anonymize_dicom_dataset, anonymize_dicom_series
+except ImportError:
+    from app.services.anonymizer import anonymize_dicom_dataset, anonymize_dicom_series
+
 def anonymize_dicom(dataset):
-    """
-    Module 2: Anonymization Module
-    
-    Removes Patient Health Information (PHI) to comply with ethical usage.
-    """
-    # Replace sensitive patient metadata with anonymous placeholders
-    dataset.PatientName = "Anonymous^Patient"
-    dataset.PatientID = "000000"
-    dataset.PatientBirthDate = ""
-    dataset.PatientSex = ""
-    
-    # We can also add image masking here if there are burned-in text details,
-    # but for most MRI DICOMs, cleaning the metadata is the primary step.
-    return dataset
+    return anonymize_dicom_dataset(dataset)
 
 def anonymize_series(dicom_series):
-    """
-    Applies anonymization to a full series of DICOM datasets.
-    """
-    return [anonymize_dicom(d) for d in dicom_series]
+    return anonymize_dicom_series(dicom_series)
