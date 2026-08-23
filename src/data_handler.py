@@ -4,58 +4,72 @@ import numpy as np
 
 def load_dicom_series(directory):
     """
-    Module 1: Load MRI Data
-    Module 4: Slice Arrangement
-    
-    Loads all DICOM files from a directory, reads metadata, and sorts them 
-    in the correct 3D order based on Slice Location.
+    Loads all DICOM files from a directory and sorts them spatially along the Z-axis.
     """
-    dicom_files = []
-    for filename in os.listdir(directory):
-        if filename.endswith(".dcm"):
-            filepath = os.path.join(directory, filename)
-            dataset = pydicom.dcmread(filepath)
-            dicom_files.append(dataset)
-            
-    # Sort slices by spatial position to ensure correct 3D arrangement
-    # We use ImagePositionPatient[2] (Z-axis) or SliceLocation
-    try:
-        dicom_files.sort(key=lambda x: float(x.ImagePositionPatient[2]))
-    except AttributeError:
-        # Fallback if ImagePositionPatient is not available
-        dicom_files.sort(key=lambda x: float(x.SliceLocation))
+    dicom_datasets = []
+    
+    if not os.path.exists(directory):
+        raise FileNotFoundError(f"Directory {directory} does not exist.")
         
-    return dicom_files
+    for root, _, files in os.walk(directory):
+        for fname in files:
+            if fname.lower().endswith(('.dcm', '.dicom')):
+                fpath = os.path.join(root, fname)
+                try:
+                    ds = pydicom.dcmread(fpath)
+                    dicom_datasets.append(ds)
+                except Exception as e:
+                    print(f"Warning: Failed to read DICOM file {fpath}: {e}")
+                    
+    if not dicom_datasets:
+        return []
+        
+    # Sort slices spatially by ImagePositionPatient Z coordinate or SliceLocation
+    try:
+        dicom_datasets.sort(key=lambda d: float(d.ImagePositionPatient[2]))
+    except AttributeError:
+        try:
+            dicom_datasets.sort(key=lambda d: float(d.SliceLocation))
+        except AttributeError:
+            dicom_datasets.sort(key=lambda d: int(d.InstanceNumber))
+            
+    return dicom_datasets
 
 def extract_pixel_data(dicom_series):
     """
-    Extracts the 2D pixel arrays from a list of DICOM datasets
-    and stacks them into a 3D NumPy array.
+    Extracts 2D pixel arrays from DICOM datasets and stacks them into a 3D NumPy array (Z, Y, X).
     """
-    slices = [d.pixel_array for d in dicom_series]
-    return np.array(slices)
+    if not dicom_series:
+        raise ValueError("Empty DICOM series provided.")
+        
+    slices = [ds.pixel_array.astype(np.float32) for ds in dicom_series]
+    volume = np.stack(slices, axis=0)
+    return volume
 
 def get_physical_spacing(dicom_series):
     """
-    Extracts the physical spacing between pixels and slices.
-    This ensures the 3D brain looks realistic and not stretched/squished.
+    Returns physical voxel spacing (Z_spacing, Y_spacing, X_spacing) in mm.
     """
-    try:
-        # Pixel spacing in X and Y (e.g. 1.0mm x 1.0mm)
-        x_space, y_space = float(dicom_series[0].PixelSpacing[0]), float(dicom_series[0].PixelSpacing[1])
-    except AttributeError:
-        x_space, y_space = 1.0, 1.0
+    if not dicom_series:
+        return (1.0, 1.0, 1.0)
         
+    # In-plane spacing (Y, X)
     try:
-        # Distance between adjacent slices
-        z_space = abs(float(dicom_series[1].ImagePositionPatient[2]) - float(dicom_series[0].ImagePositionPatient[2]))
-        if z_space == 0:
-             z_space = float(dicom_series[0].SliceThickness)
+        y_space = float(dicom_series[0].PixelSpacing[0])
+        x_space = float(dicom_series[0].PixelSpacing[1])
     except (AttributeError, IndexError):
+        y_space, x_space = 1.0, 1.0
+        
+    # Inter-slice spacing (Z)
+    if len(dicom_series) > 1:
         try:
-            z_space = float(dicom_series[0].SliceThickness)
-        except AttributeError:
-            z_space = 2.0 # Default fallback
-            
-    return (z_space, y_space, x_space) # Z, Y, X
-
+            z_space = abs(float(dicom_series[1].ImagePositionPatient[2]) - float(dicom_series[0].ImagePositionPatient[2]))
+        except (AttributeError, IndexError):
+            try:
+                z_space = float(dicom_series[0].SliceThickness)
+            except AttributeError:
+                z_space = 2.0
+    else:
+        z_space = 1.0
+        
+    return (z_space, y_space, x_space)
