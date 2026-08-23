@@ -15,12 +15,24 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
   const [coronalIndex, setCoronalIndex] = useState(64);
 
   const [axialData, setAxialData] = useState<SliceData | null>(null);
+  const [sagittalData, setSagittalData] = useState<SliceData | null>(null);
+  const [coronalData, setCoronalData] = useState<SliceData | null>(null);
+
   const [showSegOverlay, setShowSegOverlay] = useState(true);
   const [windowLevel, setWindowLevel] = useState<'brain' | 'bone' | 'high_contrast'>('brain');
 
   useEffect(() => {
     fetchScanSlice(scanId, 'axial', axialIndex).then(setAxialData);
   }, [scanId, axialIndex]);
+
+  useEffect(() => {
+    fetchScanSlice(scanId, 'sagittal', sagittalIndex).then(setSagittalData);
+  }, [scanId, sagittalIndex]);
+
+  useEffect(() => {
+    fetchScanSlice(scanId, 'coronal', coronalIndex).then(setCoronalData);
+  }, [scanId, coronalIndex]);
+
 
   // Render 2D Slice Canvas
   const renderSliceCanvas = (matrix: number[][] | undefined, segMatrix: number[][] | undefined) => {
@@ -166,7 +178,7 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
             </span>
             <span className="font-mono text-slate-400">Layer {sagittalIndex} / 127</span>
           </div>
-          {renderSliceCanvas(axialData?.mri, axialData?.segmentation)}
+          {renderSliceCanvas(sagittalData?.mri, sagittalData?.segmentation)}
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-slate-500 font-medium">Left</span>
             <input
@@ -189,7 +201,8 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
             </span>
             <span className="font-mono text-slate-400">Layer {coronalIndex} / 127</span>
           </div>
-          {renderSliceCanvas(axialData?.mri, axialData?.segmentation)}
+          {renderSliceCanvas(coronalData?.mri, coronalData?.segmentation)}
+
           <div className="flex items-center gap-2">
             <span className="text-[10px] text-slate-500 font-medium">Back</span>
             <input

@@ -13,30 +13,38 @@ def generate_synthetic_brain(shape=(64, 128, 128)):
     Z, Y, X = shape
     volume = np.zeros((Z, Y, X), dtype=np.float32)
     
-    # Create 3D grid centered at (0, 0, 0)
+    # 3D grid centered at (0, 0, 0)
     z_coords = np.linspace(-1, 1, Z)
     y_coords = np.linspace(-1, 1, Y)
     x_coords = np.linspace(-1, 1, X)
     
     zz, yy, xx = np.meshgrid(z_coords, y_coords, x_coords, indexing='ij')
     
-    # 1. Outer Skull Boundary (Ellipsoid: x^2/a^2 + y^2/b^2 + z^2/c^2 <= 1)
-    skull_mask = (xx**2 / 0.8**2 + yy**2 / 0.9**2 + zz**2 / 0.85**2) <= 1.0
-    volume[skull_mask] = 0.3  # Skull bone / dura intensity
+    # Cortical sulci folds perturbation
+    folds = (np.sin(xx * 12.0) * np.cos(yy * 12.0) * Math.sin(zz * 10.0) if hasattr(np, 'sin') else 0)
+    folds = (np.sin(xx * 12.0) * np.cos(yy * 12.0) * np.sin(zz * 10.0)) * 0.08
+
+    # 1. Outer Skull Boundary
+    skull_mask = ((xx**2 / 0.8**2 + yy**2 / 0.9**2 + zz**2 / 0.85**2) * (1.0 + folds)) <= 1.05
+    skull_mask = skull_mask & (((xx**2 / 0.8**2 + yy**2 / 0.9**2 + zz**2 / 0.85**2) * (1.0 + folds)) > 0.95)
+    volume[skull_mask] = 0.35
+
+    # Midline fissure
+    fissure = (np.abs(xx) <= 0.03) & (zz >= -0.2) & (np.abs(yy) <= 0.7)
     
-    # 2. Brain Cortex / Brain Matter (Inner Ellipsoid)
-    cortex_mask = (xx**2 / 0.7**2 + yy**2 / 0.8**2 + zz**2 / 0.75**2) <= 1.0
-    volume[cortex_mask] = 0.7  # Grey matter intensity
+    # 2. Brain Cortex / Grey Matter
+    cortex_mask = (((xx**2 / 0.72**2 + yy**2 / 0.82**2 + zz**2 / 0.75**2) * (1.0 + folds)) <= 0.95) & (~fissure)
+    volume[cortex_mask] = 0.65
     
     # 3. Inner White Matter Core
-    wm_mask = (xx**2 / 0.5**2 + yy**2 / 0.6**2 + zz**2 / 0.55**2) <= 1.0
-    volume[wm_mask] = 0.9  # White matter intensity
+    wm_mask = (((xx**2 / 0.48**2 + yy**2 / 0.58**2 + zz**2 / 0.52**2) * (1.0 + folds)) <= 0.95) & (~fissure)
+    volume[wm_mask] = 0.90
     
-    # 4. Ventricles (CSF - Fluid Filled Cavities, low/dark signal on T1)
-    ventricle1 = ((xx - 0.15)**2 / 0.15**2 + (yy - 0.1)**2 / 0.25**2 + zz**2 / 0.3**2) <= 1.0
-    ventricle2 = ((xx + 0.15)**2 / 0.15**2 + (yy - 0.1)**2 / 0.25**2 + zz**2 / 0.3**2) <= 1.0
-    volume[ventricle1] = 0.1
-    volume[ventricle2] = 0.1
+    # 4. Horn Ventricles (CSF Cavities)
+    v1 = (((xx - 0.16)**2 / 0.12**2 + (yy - 0.05)**2 / 0.28**2 + zz**2 / 0.25**2)) <= 1.0
+    v2 = (((xx + 0.16)**2 / 0.12**2 + (yy - 0.05)**2 / 0.28**2 + zz**2 / 0.25**2)) <= 1.0
+    volume[v1 | v2] = 0.12
+
     
     return volume
 

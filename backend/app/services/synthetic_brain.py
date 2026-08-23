@@ -23,14 +23,21 @@ def generate_synthetic_3d_brain(
     center_z, center_y, center_x = z_dim / 2.0, y_dim / 2.0, x_dim / 2.0
     
     # Radii for head skull and brain
-    rad_x, rad_y, rad_z = x_dim * 0.38, y_dim * 0.42, z_dim * 0.40
+    rad_x, rad_y, rad_z = x_dim * 0.36, y_dim * 0.42, z_dim * 0.40
     
-    # Normalized radial distance squared
-    dist_sq = ((x - center_x) / rad_x) ** 2 + ((y - center_y) / rad_y) ** 2 + ((z - center_z) / rad_z) ** 2
+    # Cortical sulci and gyri undulations (3D sine wave perturbation)
+    folds = (np.sin((x - center_x) * 0.35) * np.cos((y - center_y) * 0.35) * np.sin((z - center_z) * 0.35)) * 0.08
+    
+    # Normalized radial distance squared with cortical folds
+    dist_sq = (((x - center_x) / rad_x) ** 2 + ((y - center_y) / rad_y) ** 2 + ((z - center_z) / rad_z) ** 2) * (1.0 + folds)
+    
+    # Longitudinal midline fissure separating left and right hemispheres
+    fissure = (np.abs(x - center_x) <= 2) & (z >= center_z - 10) & (y >= center_y - 35) & (y <= center_y + 35)
     
     # Base masks
-    skull_mask = (dist_sq <= 1.05) & (dist_sq > 0.95)
-    brain_mask = dist_sq <= 0.95
+    skull_mask = (dist_sq <= 1.08) & (dist_sq > 0.96)
+    brain_mask = (dist_sq <= 0.96) & (~fissure)
+
     
     # Internal structures: Ventricles (inner bilateral ellipsoids)
     v_left = (((x - (center_x - 12)) / 8) ** 2 + ((y - center_y) / 20) ** 2 + ((z - center_z) / 10) ** 2) <= 1.0
