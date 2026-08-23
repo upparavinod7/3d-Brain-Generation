@@ -233,6 +233,154 @@ function BrainMesh3D({ wireframe, opacity, highlightTissue, hasLesion, exploded 
   );
 }
 
+function NeuralFiberBrain3D({ opacity, wireframe }: { opacity?: number; wireframe?: boolean }) {
+  const groupRef = useRef<THREE.Group>(null);
+
+  const { particlesPosition, particlesColor, fiberPositions, fiberColors } = useMemo(() => {
+    const pCount = 5000;
+    const positions = new Float32Array(pCount * 3);
+    const colors = new Float32Array(pCount * 3);
+
+    const fPositions: number[] = [];
+    const fColors: number[] = [];
+
+    const cyan = new THREE.Color('#00F0FF');
+    const purple = new THREE.Color('#A855F7');
+    const magenta = new THREE.Color('#EC4899');
+    const amber = new THREE.Color('#F59E0B');
+    const blue = new THREE.Color('#3B82F6');
+
+    for (let i = 0; i < pCount; i++) {
+      const u = Math.random();
+      let x = 0, y = 0, z = 0;
+
+      if (u < 0.76) {
+        // Cerebral hemispheres
+        const side = Math.random() > 0.5 ? 1 : -1;
+        const theta = Math.random() * Math.PI * 2;
+        const phi = Math.acos(2 * Math.random() - 1);
+        const rad = 0.4 + Math.random() * 1.35;
+
+        x = rad * Math.sin(phi) * Math.cos(theta) * 0.95 + side * 0.35;
+        y = rad * Math.sin(phi) * Math.sin(theta) * 1.45;
+        z = rad * Math.cos(phi) * 1.1;
+
+        const folds = Math.sin(x * 9) * Math.cos(y * 9) * 0.08;
+        x *= (1 + folds);
+        y *= (1 + folds);
+        z *= (1 + folds);
+      } else if (u < 0.90) {
+        // Cerebellum
+        const theta = Math.random() * Math.PI * 2;
+        const rad = Math.random() * 0.65;
+        x = rad * Math.cos(theta) * 1.35;
+        y = -0.7 + (Math.random() - 0.5) * 0.45;
+        z = -0.6 + (Math.random() - 0.5) * 0.45;
+      } else {
+        // Brainstem
+        x = (Math.random() - 0.5) * 0.35;
+        y = -0.95 - Math.random() * 0.6;
+        z = -0.2 + (Math.random() - 0.5) * 0.25;
+      }
+
+      positions[i * 3] = x;
+      positions[i * 3 + 1] = y;
+      positions[i * 3 + 2] = z;
+
+      let color = cyan;
+      if (y > 0.4) color = cyan;
+      else if (y > -0.2) color = Math.random() > 0.5 ? purple : magenta;
+      else if (z < -0.3) color = amber;
+      else color = blue;
+
+      colors[i * 3] = color.r;
+      colors[i * 3 + 1] = color.g;
+      colors[i * 3 + 2] = color.b;
+
+      if (i > 0 && Math.random() < 0.45) {
+        const prevIdx = Math.floor(Math.random() * i);
+        const px = positions[prevIdx * 3];
+        const py = positions[prevIdx * 3 + 1];
+        const pz = positions[prevIdx * 3 + 2];
+
+        const dist = Math.hypot(x - px, y - py, z - pz);
+        if (dist < 0.85) {
+          fPositions.push(x, y, z, px, py, pz);
+          fColors.push(color.r, color.g, color.b, color.r, color.g, color.b);
+        }
+      }
+    }
+
+    return {
+      particlesPosition: positions,
+      particlesColor: colors,
+      fiberPositions: new Float32Array(fPositions),
+      fiberColors: new Float32Array(fColors),
+    };
+  }, []);
+
+  useFrame((_state: any, delta: number) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.12;
+    }
+  });
+
+  const fiberGeo = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(fiberPositions, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(fiberColors, 3));
+    return geo;
+  }, [fiberPositions, fiberColors]);
+
+  const particleGeo = useMemo(() => {
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(particlesPosition, 3));
+    geo.setAttribute('color', new THREE.BufferAttribute(particlesColor, 3));
+    return geo;
+  }, [particlesPosition, particlesColor]);
+
+  return (
+    <group ref={groupRef} rotation={[0.2, 0, 0]}>
+      <lineSegments geometry={fiberGeo}>
+        <lineBasicMaterial
+          vertexColors={true}
+          transparent={true}
+          opacity={(opacity ?? 0.85) * 0.75}
+          blending={THREE.AdditiveBlending}
+          linewidth={1}
+        />
+      </lineSegments>
+
+      <points geometry={particleGeo}>
+        <pointsMaterial
+          size={0.042}
+          vertexColors={true}
+          transparent={true}
+          opacity={opacity ?? 0.95}
+          blending={THREE.AdditiveBlending}
+          sizeAttenuation={true}
+        />
+      </points>
+
+      <mesh scale={[1.35, 1.65, 1.25]} position={[0, 0.1, 0]}>
+        <sphereGeometry args={[1.0, 36, 36]} />
+        <meshPhysicalMaterial
+          color="#00F0FF"
+          wireframe={wireframe}
+          transparent={true}
+          opacity={0.15}
+          roughness={0.1}
+          transmission={0.9}
+          thickness={0.5}
+          emissive="#00F0FF"
+          emissiveIntensity={0.2}
+          blending={THREE.AdditiveBlending}
+        />
+      </mesh>
+    </group>
+  );
+}
+
 function RealDicomBrainMesh({ url, wireframe, opacity }: { url: string; wireframe?: boolean; opacity?: number }) {
   const geometry = useLoader(STLLoader, url);
   const groupRef = useRef<THREE.Group>(null);
@@ -278,7 +426,7 @@ export default function BrainCanvas({
 }: BrainCanvasProps) {
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
-  const [useRealDicom, setUseRealDicom] = useState(true);
+  const [viewMode, setViewMode] = useState<'hologram' | 'real_dicom' | 'anatomical'>('hologram');
   const [localOpacity, setLocalOpacity] = useState(0.7);
   const [localExploded, setLocalExploded] = useState(false);
   const [localHighlight, setLocalHighlight] = useState<'all' | 'gm' | 'wm' | 'csf' | 'lesion'>('all');
@@ -314,7 +462,7 @@ export default function BrainCanvas({
   };
 
   return (
-    <div className="relative w-full h-[620px] rounded-3xl overflow-hidden glass-panel-glow border border-slate-800 shadow-2xl">
+    <div className="relative w-full h-[620px] rounded-3xl overflow-hidden glass-panel-glow border border-slate-800 shadow-2xl bg-slate-950">
       {/* 3D R3F Canvas Viewport */}
       <Canvas gl={{ preserveDrawingBuffer: true }}>
         <PerspectiveCamera makeDefault position={[0, 0, 5.8]} fov={42} />
@@ -324,7 +472,8 @@ export default function BrainCanvas({
         <pointLight position={[0, 3, 3]} intensity={0.9} color="#ef4444" />
 
         <Center>
-          {useRealDicom ? (
+          {viewMode === 'hologram' && <NeuralFiberBrain3D opacity={activeOpacity} wireframe={wireframe} />}
+          {viewMode === 'real_dicom' && (
             <React.Suspense
               fallback={
                 <BrainMesh3D
@@ -338,7 +487,8 @@ export default function BrainCanvas({
             >
               <RealDicomBrainMesh url={stlUrl} wireframe={wireframe} opacity={activeOpacity} />
             </React.Suspense>
-          ) : (
+          )}
+          {viewMode === 'anatomical' && (
             <BrainMesh3D
               hasLesion={hasLesion}
               wireframe={wireframe}
@@ -352,25 +502,33 @@ export default function BrainCanvas({
         <OrbitControls autoRotate={autoRotate} autoRotateSpeed={1.2} enablePan={true} enableZoom={true} />
       </Canvas>
 
-
       {/* Floating Top Action Toolbar */}
       <div className="absolute top-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-950/85 backdrop-blur-xl border border-slate-800 shadow-xl">
-        <div className="flex items-center gap-2 text-xs font-semibold text-slate-200">
+        <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-slate-200">
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/80 border border-cyan-800/80 text-cyan-400">
             <Sparkles className="w-3.5 h-3.5" /> 3D Viewport Studio
           </span>
 
-          <button
-            onClick={() => setUseRealDicom(!useRealDicom)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
-              useRealDicom
-                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm'
-                : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
-            }`}
-          >
-            <Layers className="w-3.5 h-3.5 inline mr-1.5 text-cyan-400" />
-            {useRealDicom ? 'Clinical DICOM 3D Surface' : 'Anatomical Model'}
-          </button>
+          <div className="flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800">
+            {[
+              { id: 'hologram', label: '✨ PBS Neural Tractography' },
+              { id: 'real_dicom', label: '🧊 Clinical DICOM 3D Mesh' },
+              { id: 'anatomical', label: '🧠 Anatomical Layers' },
+            ].map((m) => (
+              <button
+                key={m.id}
+                onClick={() => setViewMode(m.id as any)}
+                className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  viewMode === m.id
+                    ? 'bg-cyan-400 text-slate-950 shadow-md font-bold'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+
 
 
           <button
