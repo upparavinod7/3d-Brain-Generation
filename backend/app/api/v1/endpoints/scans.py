@@ -210,11 +210,12 @@ def get_or_create_scan(scan_id: str):
             
             # Generate real 3D mesh surface geometry via Marching Cubes
             try:
-                verts, faces, normals = extract_3d_mesh(norm_vol, iso_level=0.25, spacing=(1.0, 1.0, 1.0), step_size=1)
+                verts, faces, normals, resampled_shape = extract_3d_mesh(norm_vol, iso_level=0.12, spacing=spacing, target_spacing=(1.0, 1.0, 1.0), step_size=1)
                 export_mesh_to_formats(verts, faces, normals, base_filename=f"mesh_{scan_id}")
                 export_mesh_to_formats(verts, faces, normals, base_filename="brain_3d_mesh")
             except Exception as e:
                 print(f"Mesh generation warning: {e}")
+                resampled_shape = list(norm_vol.shape)
                 
             SCANS_DB[scan_id] = {
                 "scan_id": scan_id,
@@ -222,12 +223,14 @@ def get_or_create_scan(scan_id: str):
                 "volume": norm_vol,
                 "seg_mask": seg,
                 "dimensions": list(norm_vol.shape),
+                "resampled_dimensions": resampled_shape,
                 "spacing": [float(s) for s in spacing],
                 "modality": "MR T1-Weighted (Real Clinical DICOM Series)",
                 "has_pathology": True,
                 "pathology_type": "Glioma / Hyperintense Lesion",
                 "volumetric_stats": vol_stats,
                 "created_at": datetime.datetime.now().isoformat(),
+
                 "pipeline": {
                     "status": "ready",
                     "stage": "reconstruction",

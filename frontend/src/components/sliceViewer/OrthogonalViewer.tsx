@@ -10,9 +10,9 @@ interface OrthogonalViewerProps {
 }
 
 export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
-  const [axialIndex, setAxialIndex] = useState(32);
-  const [sagittalIndex, setSagittalIndex] = useState(64);
-  const [coronalIndex, setCoronalIndex] = useState(64);
+  const [axialIndex, setAxialIndex] = useState(25);
+  const [sagittalIndex, setSagittalIndex] = useState(128);
+  const [coronalIndex, setCoronalIndex] = useState(128);
 
   const [axialData, setAxialData] = useState<SliceData | null>(null);
   const [sagittalData, setSagittalData] = useState<SliceData | null>(null);
@@ -30,8 +30,9 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
   }, [scanId, sagittalIndex]);
 
   useEffect(() => {
-    fetchScanSlice(scanId, 'coronal', coronalIndex).then(setCoronalData);
+    fetchScanSlice(scanId, 'coronal', coronalIndex).then(setSagittalData);
   }, [scanId, coronalIndex]);
+
 
 
   // Render 2D Slice Canvas
@@ -161,7 +162,7 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
             <input
               type="range"
               min="0"
-              max="63"
+              max="50"
               value={axialIndex}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAxialIndex(parseInt(e.target.value))}
               className="w-full accent-cyan-500 cursor-pointer"
@@ -176,7 +177,7 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
             <span className="flex items-center gap-1.5 text-blue-400">
               <Crosshair className="w-3.5 h-3.5" /> Side Slices (Sagittal)
             </span>
-            <span className="font-mono text-slate-400">Layer {sagittalIndex} / 127</span>
+            <span className="font-mono text-slate-400">Slice {sagittalIndex} / 255</span>
           </div>
           {renderSliceCanvas(sagittalData?.mri, sagittalData?.segmentation)}
           <div className="flex items-center gap-2">
@@ -184,7 +185,7 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
             <input
               type="range"
               min="0"
-              max="127"
+              max="255"
               value={sagittalIndex}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSagittalIndex(parseInt(e.target.value))}
               className="w-full accent-blue-500 cursor-pointer"
@@ -199,7 +200,7 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
             <span className="flex items-center gap-1.5 text-indigo-400">
               <Crosshair className="w-3.5 h-3.5" /> Front-to-Back Slices (Coronal)
             </span>
-            <span className="font-mono text-slate-400">Layer {coronalIndex} / 127</span>
+            <span className="font-mono text-slate-400">Slice {coronalIndex} / 255</span>
           </div>
           {renderSliceCanvas(coronalData?.mri, coronalData?.segmentation)}
 
@@ -208,7 +209,7 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
             <input
               type="range"
               min="0"
-              max="127"
+              max="255"
               value={coronalIndex}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCoronalIndex(parseInt(e.target.value))}
               className="w-full accent-indigo-500 cursor-pointer"
@@ -217,6 +218,7 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
           </div>
         </div>
       </div>
+
 
     </div>
   );

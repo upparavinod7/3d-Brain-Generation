@@ -36,15 +36,15 @@ function WorkstationContent() {
   };
 
   useEffect(() => {
-    if (scanIdFromUrl) {
-      getScan(scanIdFromUrl).then((s) => {
-        setScan(s);
-        setHasLesion(s.has_pathology);
-      });
-    } else {
+    const idToFetch = scanIdFromUrl || 'real-dicom-demo';
+    getScan(idToFetch).then((s) => {
+      setScan(s);
+      setHasLesion(s.has_pathology);
+    }).catch(() => {
       loadScan(true);
-    }
+    });
   }, [scanIdFromUrl]);
+
 
 
   const handleRunReconstruction = async () => {
