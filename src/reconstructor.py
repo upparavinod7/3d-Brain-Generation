@@ -94,3 +94,4 @@ def reconstruct_proposed_tri_cnn(sparse_volume, target_depth):
         tensor_out = _tri_cnn_model(tensor_in)
         
     return tensor_out.squeeze(0).squeeze(0).cpu().numpy()
+

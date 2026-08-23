@@ -72,10 +72,21 @@ def preprocess_volume(volume, apply_clahe=False):
         
     return norm_vol
 
+def apply_preprocessing(image_slice):
+    """
+    Normalizes a 2D image slice to [0, 1].
+    """
+    slice_min = np.min(image_slice)
+    slice_max = np.max(image_slice)
+    if slice_max > slice_min:
+        return (image_slice - slice_min) / (slice_max - slice_min)
+    return image_slice
+
 if __name__ == "__main__":
-    from phantom_generator import generate_synthetic_brain
+    from src.phantom_generator import generate_synthetic_brain
     raw_vol = generate_synthetic_brain() * 2000.0  # Scale to raw intensity range
     proc_vol = preprocess_volume(raw_vol, apply_clahe=True)
     
     print(f"Raw Vol Range:  [{raw_vol.min():.1f}, {raw_vol.max():.1f}]")
     print(f"Processed Range: [{proc_vol.min():.4f}, {proc_vol.max():.4f}]")
+

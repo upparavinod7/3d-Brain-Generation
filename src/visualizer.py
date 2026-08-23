@@ -14,6 +14,17 @@ BRAIN_COLORS = [
 ]
 REAL_BRAIN_CMAP = LinearSegmentedColormap.from_list("real_brain", BRAIN_COLORS)
 
+def show_slice(image_slice, title="MRI Slice"):
+    """
+    Displays a 2D slice using matplotlib.
+    """
+    plt.figure(figsize=(6, 6))
+    plt.imshow(image_slice, cmap="gray")
+    plt.title(title)
+    plt.axis("off")
+    plt.tight_layout()
+    plt.show()
+
 def plot_qualitative_comparison(gt_vol, reconstructions_dict, slice_idx=None, save_path="data/output/benchmark_comparison.png"):
     """
     Generates a qualitative comparison figure showing Ground Truth alongside all reconstruction methods.
@@ -104,3 +115,4 @@ def show_interactive_orthogonal_slicer(volume, spacing=(1.0, 1.0, 1.0), title="I
     print("  - Rotate/Zoom/Pan with mouse.")
     print("  - Press 'q' to close viewer.\n")
     plotter.show()
+

@@ -1,0 +1,26 @@
+{
+    "A. Linear Z": {
+        "PSNR (dB)": 15.7943,
+        "SSIM": 0.442,
+        "MAE": 0.093732,
+        "MSE": 0.026337
+    },
+    "B. Trilinear": {
+        "PSNR (dB)": 15.7943,
+        "SSIM": 0.442,
+        "MAE": 0.093732,
+        "MSE": 0.026337
+    },
+    "C. Standalone 3D CNN": {
+        "PSNR (dB)": 16.0128,
+        "SSIM": 0.4221,
+        "MAE": 0.090875,
+        "MSE": 0.025045
+    },
+    "D. Proposed (Tri+CNN)": {
+        "PSNR (dB)": 16.7009,
+        "SSIM": 0.4565,
+        "MAE": 0.086682,
+        "MSE": 0.021375
+    }
+}

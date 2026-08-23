@@ -25,7 +25,7 @@ def evaluate_reconstruction(reconstructed_vol, gt_vol, data_range=1.0):
         data_range (float): Maximum intensity range (default 1.0 for normalized volumes).
         
     Returns:
-        dict: Metric dictionary {'PSNR': float, 'SSIM': float, 'MAE': float, 'MSE': float}
+        dict: Metric dictionary {'PSNR (dB)': float, 'SSIM': float, 'MAE': float, 'MSE': float}
     """
     if reconstructed_vol.shape != gt_vol.shape:
         raise ValueError(f"Shape mismatch: Reconstructed {reconstructed_vol.shape} vs GT {gt_vol.shape}")
@@ -56,3 +56,14 @@ def evaluate_reconstruction(reconstructed_vol, gt_vol, data_range=1.0):
         "MAE": round(float(mae_val), 6),
         "MSE": round(float(mse_val), 6)
     }
+
+def calculate_psnr(original, reconstructed):
+    """
+    Standalone PSNR helper calculation.
+    """
+    mse = np.mean((original - reconstructed) ** 2)
+    if mse == 0:
+        return float('inf')
+    max_pixel = 1.0 if np.max(original) <= 1.0 else 255.0
+    return float(20 * np.log10(max_pixel / np.sqrt(mse)))
+

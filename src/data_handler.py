@@ -42,9 +42,21 @@ def extract_pixel_data(dicom_series):
     if not dicom_series:
         raise ValueError("Empty DICOM series provided.")
         
+    import cv2
     slices = [ds.pixel_array.astype(np.float32) for ds in dicom_series]
-    volume = np.stack(slices, axis=0)
+    target_shape = slices[0].shape
+    
+    resized_slices = []
+    for s in slices:
+        if s.shape != target_shape:
+            s_resized = cv2.resize(s, (target_shape[1], target_shape[0]), interpolation=cv2.INTER_LINEAR)
+            resized_slices.append(s_resized)
+        else:
+            resized_slices.append(s)
+            
+    volume = np.stack(resized_slices, axis=0)
     return volume
+
 
 def get_physical_spacing(dicom_series):
     """
@@ -73,3 +85,4 @@ def get_physical_spacing(dicom_series):
         z_space = 1.0
         
     return (z_space, y_space, x_space)
+
