@@ -1,36 +1,90 @@
-# Virtual Environment
-venv/
-env/
-ENV/
-.venv/
-
-# Python cache
+# Byte-compiled / optimized files
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 
 # Distribution / packaging
+.Python
 build/
+develop-eggs/
 dist/
-*.egg-info/
+downloads/
+eggs/
 .eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
 
-# Logs
+# Pytest / Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Virtual Environments
+venv/
+.venv/
+env/
+ENV/
+
+# Node & Next.js
+node_modules/
+.next/
+out/
+.vercel
 *.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Medical Uploads & Generated Outputs (keep directory structure via .gitkeep)
+storage/uploads/*
+storage/processed/*
+storage/outputs/*
+!storage/uploads/.gitkeep
+!storage/processed/.gitkeep
+!storage/outputs/.gitkeep
 
 # Environment variables
 .env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# IDE / Editor files
-.vscode/
+# IDE & OS Files
+.DS_Store
+Thumbs.db
 .idea/
+.vscode/*
+!.vscode/settings.json
+*.swp
+*.swo
 
 # Jupyter Notebook checkpoints
 .ipynb_checkpoints/
 
-# OS files
-.DS_Store
-Thumbs.db
+# Model Checkpoints & Large Files
+*.pt
+*.pth
+*.ckpt
+*.onnx
 
-#dcm files
-.dcm
+# DICOM Medical Imaging Data
+*.dcm
+*.DCM
+*.nii
+*.nii.gz
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/output/*
+!data/output/.gitkeep
