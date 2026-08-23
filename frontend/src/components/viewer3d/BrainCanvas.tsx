@@ -1,10 +1,12 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import React, { useState, useRef, useMemo } from 'react';
+import { Canvas, useFrame, useLoader } from '@react-three/fiber';
+
 import { OrbitControls, PerspectiveCamera, Center } from '@react-three/drei';
 import * as THREE from 'three';
-import { Box, Sliders, Camera, RotateCcw, Sparkles, Move3D } from 'lucide-react';
+import { STLLoader } from 'three/examples/jsm/loaders/STLLoader.js';
+import { Box, Sliders, Camera, RotateCcw, Sparkles, Move3D, Layers } from 'lucide-react';
 
 export interface BrainMesh3DProps {
   hasLesion?: boolean;
@@ -22,7 +24,9 @@ export interface BrainCanvasProps {
   setHighlightTissue?: React.Dispatch<React.SetStateAction<'all' | 'gm' | 'wm' | 'csf' | 'lesion'>>;
   exploded?: boolean;
   setExploded?: React.Dispatch<React.SetStateAction<boolean>>;
+  stlUrl?: string;
 }
+
 
 function createBrainHemisphereGeometry(side: 'left' | 'right') {
   const geo = new THREE.SphereGeometry(1.0, 64, 64);
@@ -229,6 +233,38 @@ function BrainMesh3D({ wireframe, opacity, highlightTissue, hasLesion, exploded 
   );
 }
 
+function RealDicomBrainMesh({ url, wireframe, opacity }: { url: string; wireframe?: boolean; opacity?: number }) {
+  const geometry = useLoader(STLLoader, url);
+  const groupRef = useRef<THREE.Group>(null);
+
+  useFrame((_state: any, delta: number) => {
+    if (groupRef.current) {
+      groupRef.current.rotation.y += delta * 0.12;
+    }
+  });
+
+  useMemo(() => {
+    if (geometry) {
+      geometry.computeVertexNormals();
+      geometry.center();
+    }
+  }, [geometry]);
+
+  return (
+    <group ref={groupRef} rotation={[-Math.PI / 2, 0, 0]} scale={[0.022, 0.022, 0.022]}>
+      <mesh geometry={geometry}>
+        <meshStandardMaterial
+          color="#38BDF8"
+          wireframe={wireframe}
+          transparent={true}
+          opacity={opacity ?? 0.85}
+          roughness={0.3}
+          metalness={0.2}
+        />
+      </mesh>
+    </group>
+  );
+}
 
 export default function BrainCanvas({
   hasLesion = true,
@@ -237,10 +273,12 @@ export default function BrainCanvas({
   highlightTissue = 'all',
   setHighlightTissue,
   exploded = false,
-  setExploded
+  setExploded,
+  stlUrl = 'http://localhost:8000/static/outputs/brain_3d_mesh.stl'
 }: BrainCanvasProps) {
   const [wireframe, setWireframe] = useState(false);
   const [autoRotate, setAutoRotate] = useState(true);
+  const [useRealDicom, setUseRealDicom] = useState(true);
   const [localOpacity, setLocalOpacity] = useState(0.7);
   const [localExploded, setLocalExploded] = useState(false);
   const [localHighlight, setLocalHighlight] = useState<'all' | 'gm' | 'wm' | 'csf' | 'lesion'>('all');
@@ -286,17 +324,34 @@ export default function BrainCanvas({
         <pointLight position={[0, 3, 3]} intensity={0.9} color="#ef4444" />
 
         <Center>
-          <BrainMesh3D
-            hasLesion={hasLesion}
-            wireframe={wireframe}
-            opacity={activeOpacity}
-            highlightTissue={activeHighlight}
-            exploded={activeExploded}
-          />
+          {useRealDicom ? (
+            <React.Suspense
+              fallback={
+                <BrainMesh3D
+                  hasLesion={hasLesion}
+                  wireframe={wireframe}
+                  opacity={activeOpacity}
+                  highlightTissue={activeHighlight}
+                  exploded={activeExploded}
+                />
+              }
+            >
+              <RealDicomBrainMesh url={stlUrl} wireframe={wireframe} opacity={activeOpacity} />
+            </React.Suspense>
+          ) : (
+            <BrainMesh3D
+              hasLesion={hasLesion}
+              wireframe={wireframe}
+              opacity={activeOpacity}
+              highlightTissue={activeHighlight}
+              exploded={activeExploded}
+            />
+          )}
         </Center>
 
         <OrbitControls autoRotate={autoRotate} autoRotateSpeed={1.2} enablePan={true} enableZoom={true} />
       </Canvas>
+
 
       {/* Floating Top Action Toolbar */}
       <div className="absolute top-4 left-4 right-4 flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-slate-950/85 backdrop-blur-xl border border-slate-800 shadow-xl">
@@ -304,6 +359,19 @@ export default function BrainCanvas({
           <span className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-950/80 border border-cyan-800/80 text-cyan-400">
             <Sparkles className="w-3.5 h-3.5" /> 3D Viewport Studio
           </span>
+
+          <button
+            onClick={() => setUseRealDicom(!useRealDicom)}
+            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+              useRealDicom
+                ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50 shadow-sm'
+                : 'bg-slate-900/80 text-slate-400 border-slate-800 hover:text-slate-200'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5 inline mr-1.5 text-cyan-400" />
+            {useRealDicom ? 'Clinical DICOM 3D Surface' : 'Anatomical Model'}
+          </button>
+
 
           <button
             onClick={() => setWireframe(!wireframe)}
