@@ -1,13 +1,20 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import BrainCanvas from '@/components/viewer3d/BrainCanvas';
 import OrthogonalViewer from '@/components/sliceViewer/OrthogonalViewer';
-import { createSyntheticScan, triggerReconstruction } from '@/lib/api';
+import { useSearchParams } from 'next/navigation';
+import { createSyntheticScan, triggerReconstruction, getScan } from '@/lib/api';
 import { ScanData, ReconstructionData } from '@/types';
 import { Activity, Cpu, Download, FileText, Layers, Sparkles, Sliders, CheckCircle2, Play, Info } from 'lucide-react';
 
-export default function WorkstationViewerPage() {
+function WorkstationContent() {
+
+
+
+  const searchParams = useSearchParams();
+  const scanIdFromUrl = searchParams.get('scan_id');
+
   const [hasLesion, setHasLesion] = useState(true);
   const [scan, setScan] = useState<ScanData | null>(null);
   const [activeTab, setActiveTab] = useState<'metrics' | 'anatomy' | 'export'>('metrics');
@@ -29,8 +36,16 @@ export default function WorkstationViewerPage() {
   };
 
   useEffect(() => {
-    loadScan(true);
-  }, []);
+    if (scanIdFromUrl) {
+      getScan(scanIdFromUrl).then((s) => {
+        setScan(s);
+        setHasLesion(s.has_pathology);
+      });
+    } else {
+      loadScan(true);
+    }
+  }, [scanIdFromUrl]);
+
 
   const handleRunReconstruction = async () => {
     if (!scan) return;
@@ -370,4 +385,18 @@ export default function WorkstationViewerPage() {
 function BrainCanvasPropsIcon() {
   return <Cpu className="h-6 w-6 text-cyan-300" />;
 }
+
+export default function WorkstationViewerPage() {
+  return (
+    <Suspense fallback={
+      <div className="mx-auto flex max-w-7xl items-center justify-center p-24 text-cyan-300 font-bold text-sm">
+        <Cpu className="h-6 w-6 animate-spin mr-2" />
+        Loading 3D Studio & Volume Mesh...
+      </div>
+    }>
+      <WorkstationContent />
+    </Suspense>
+  );
+}
+
 
