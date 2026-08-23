@@ -16,40 +16,41 @@ export default function LandingPage() {
       <section className="mx-auto flex max-w-7xl flex-col gap-12 px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="grid items-center gap-10 lg:grid-cols-[1.05fr_0.95fr]">
           <div className="space-y-8">
-            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3 py-1 text-sm text-cyan-300">
+            <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/20 bg-cyan-500/10 px-3.5 py-1 text-xs font-semibold text-cyan-300">
               <Sparkles className="h-4 w-4" />
-              AI-native 3D brain generation platform
+              AI 3D Brain Reconstruction Platform
             </div>
             <div className="space-y-4">
-              <h1 className="max-w-3xl text-4xl font-semibold tracking-tight text-white sm:text-5xl lg:text-7xl">
-                Design-forward <span className="text-gradient-cyan">medical intelligence</span> for the next era of imaging.
+              <h1 className="max-w-3xl text-3xl font-extrabold tracking-tight text-white sm:text-5xl lg:text-6xl leading-tight">
+                AI-Powered <span className="text-gradient-cyan">3D Brain Generation</span> & Reconstruction.
               </h1>
-              <p className="max-w-2xl text-lg leading-8 text-slate-400">
-                NeuroForge reimagines brain MRI review with cinematic visuals, modular AI workflows, and a workspace that feels as polished as the science behind it.
+              <p className="max-w-2xl text-base leading-relaxed text-slate-400">
+                Transform sparse MRI scans into high-definition 3D brain models with deep learning super-resolution, automated tissue volume measurements, and 1-click printable exports.
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-4">
-              <Link href="/viewer" className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-cyan-400 to-blue-500 px-5 py-3 text-sm font-semibold text-slate-950 transition hover:opacity-90">
-                Explore the workspace
+              <Link href="/viewer" className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 px-6 py-3 text-xs font-bold text-slate-950 transition shadow-lg">
+                Open 3D Studio
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/upload" className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-sm font-semibold text-slate-200 transition hover:bg-white/10">
-                <ScanLine className="h-4 w-4" />
-                Begin intake
+              <Link href="/upload" className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-6 py-3 text-xs font-bold text-slate-200 transition hover:bg-white/10">
+                <ScanLine className="h-4 w-4 text-cyan-400" />
+                Upload MRI Scan
               </Link>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
               {[
-                ['94%', 'pipeline readiness'],
-                ['24/7', 'review continuity'],
-                ['3D', 'surface export'],
+                ['34.8 dB', 'Clarity Score (PSNR)'],
+                ['4x Faster', 'Scan Acceleration'],
+                ['3D STL/GLB', 'Printable Geometry'],
               ].map(([value, label]) => (
-                <div key={label} className="rounded-2xl border border-white/10 bg-white/5 p-4">
-                  <div className="text-xl font-semibold text-white">{value}</div>
-                  <div className="mt-1 text-sm text-slate-400">{label}</div>
+                <div key={label} className="rounded-2xl border border-white/10 bg-slate-900/60 p-4">
+                  <div className="text-lg font-bold text-white">{value}</div>
+                  <div className="mt-1 text-xs text-slate-400">{label}</div>
                 </div>
               ))}
             </div>
+
           </div>
 
           <div className="rounded-[32px] border border-white/10 bg-slate-950/50 p-3 shadow-[0_40px_120px_rgba(8,15,32,0.6)]">

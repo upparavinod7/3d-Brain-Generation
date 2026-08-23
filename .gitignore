@@ -74,3 +74,16 @@ Thumbs.db
 *.ckpt
 *.onnx
 
+# DICOM Medical Imaging Data
+*.dcm
+*.DCM
+*.nii
+*.nii.gz
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+data/output/*
+!data/output/.gitkeep
+
+

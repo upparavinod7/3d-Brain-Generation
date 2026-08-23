@@ -246,22 +246,29 @@ export default function BrainCanvas({
         </div>
 
         {/* Tissue Color Highlights */}
-        <div className="flex items-center gap-1.5">
-          <span className="text-slate-400 font-medium mr-1">Highlight Tissue:</span>
-          {(['all', 'gm', 'wm', 'csf', 'lesion'] as const).map((tissue) => (
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="text-slate-400 font-medium mr-1">Highlight Region:</span>
+          {[
+            { id: 'all', label: '🧠 All Anatomy' },
+            { id: 'gm', label: '🩶 Grey Matter' },
+            { id: 'wm', label: '⚪ White Matter' },
+            { id: 'csf', label: '💧 Brain Fluid' },
+            { id: 'lesion', label: '🔴 Tumor Area' },
+          ].map(({ id, label }) => (
             <button
-              key={tissue}
-              onClick={() => handleHighlightSelect(tissue)}
-              className={`px-2.5 py-1 rounded-lg uppercase text-[10px] font-bold border transition-all ${
-                activeHighlight === tissue
+              key={id}
+              onClick={() => handleHighlightSelect(id as any)}
+              className={`px-3 py-1 rounded-xl text-xs font-semibold border transition-all ${
+                activeHighlight === id
                   ? 'bg-cyan-400 text-slate-950 border-cyan-300 shadow-sm'
-                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800'
+                  : 'bg-slate-900 text-slate-400 border-slate-800 hover:bg-slate-800 hover:text-slate-200'
               }`}
             >
-              {tissue}
+              {label}
             </button>
           ))}
         </div>
+
       </div>
     </div>
   );

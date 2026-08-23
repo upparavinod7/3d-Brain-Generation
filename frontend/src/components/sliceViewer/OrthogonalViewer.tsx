@@ -82,99 +82,129 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
       <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-4">
         <div className="flex items-center gap-2">
           <Layers className="w-5 h-5 text-cyan-400" />
-          <h3 className="text-base font-bold text-white">2D Orthogonal Slice Viewer</h3>
+          <div>
+            <h3 className="text-base font-bold text-white">2D Cross-Section MRI Slice Viewer</h3>
+            <p className="text-xs text-slate-400">Examine 2D cross-section MRI slices layer by layer across 3 directions.</p>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2 text-xs">
+        <div className="flex flex-wrap items-center gap-3 text-xs">
           <button
             onClick={() => setShowSegOverlay(!showSegOverlay)}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border font-medium transition-all ${
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border font-semibold transition-all ${
               showSegOverlay
                 ? 'bg-cyan-500/20 text-cyan-300 border-cyan-500/50'
                 : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
             }`}
           >
             {showSegOverlay ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-            AI Segmentation Overlay
+            {showSegOverlay ? 'AI Tissue Overlay (ON)' : 'AI Tissue Overlay (OFF)'}
           </button>
 
-          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-lg border border-slate-800">
-            {(['brain', 'bone', 'high_contrast'] as const).map((preset) => (
+          <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+            {[
+              { id: 'brain', label: 'Standard View' },
+              { id: 'high_contrast', label: 'High Contrast' },
+            ].map((preset) => (
               <button
-                key={preset}
-                onClick={() => setWindowLevel(preset)}
-                className={`px-2 py-1 rounded text-[10px] font-bold uppercase transition-all ${
-                  windowLevel === preset
-                    ? 'bg-slate-800 text-cyan-400'
+                key={preset.id}
+                onClick={() => setWindowLevel(preset.id as any)}
+                className={`px-2.5 py-1 rounded-lg text-xs font-semibold transition-all ${
+                  windowLevel === preset.id
+                    ? 'bg-slate-800 text-cyan-400 shadow-sm'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
-                {preset.replace('_', ' ')}
+                {preset.label}
               </button>
             ))}
           </div>
         </div>
       </div>
 
+      {/* Color Legend */}
+      {showSegOverlay && (
+        <div className="flex flex-wrap items-center gap-4 bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs text-slate-300">
+          <span className="font-semibold text-slate-400">Color Guide:</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-500/90 inline-block" /> 🔴 Tumor / Lesion</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-blue-500/90 inline-block" /> 🔵 White Matter</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-500/90 inline-block" /> 🟢 Grey Matter</span>
+          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-cyan-400/90 inline-block" /> 🩵 Brain Fluid</span>
+        </div>
+      )}
+
       {/* 3 Orthogonal Viewports */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Axial View */}
-        <div className="space-y-2">
+        <div className="space-y-2 bg-slate-950/40 p-3 rounded-2xl border border-slate-800/80">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
             <span className="flex items-center gap-1.5 text-cyan-400">
-              <Crosshair className="w-3.5 h-3.5" /> Axial View (Z)
+              <Crosshair className="w-3.5 h-3.5" /> Top-Down Slices (Axial)
             </span>
-            <span className="font-mono text-slate-400">Slice: {axialIndex} / 63</span>
+            <span className="font-mono text-slate-400">Layer {axialIndex} / 63</span>
           </div>
           {renderSliceCanvas(axialData?.mri, axialData?.segmentation)}
-          <input
-            type="range"
-            min="0"
-            max="63"
-            value={axialIndex}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAxialIndex(parseInt(e.target.value))}
-            className="w-full accent-cyan-500 cursor-pointer"
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-500 font-medium">Bottom</span>
+            <input
+              type="range"
+              min="0"
+              max="63"
+              value={axialIndex}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setAxialIndex(parseInt(e.target.value))}
+              className="w-full accent-cyan-500 cursor-pointer"
+            />
+            <span className="text-[10px] text-slate-500 font-medium">Top</span>
+          </div>
         </div>
 
         {/* Sagittal View */}
-        <div className="space-y-2">
+        <div className="space-y-2 bg-slate-950/40 p-3 rounded-2xl border border-slate-800/80">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
             <span className="flex items-center gap-1.5 text-blue-400">
-              <Crosshair className="w-3.5 h-3.5" /> Sagittal View (X)
+              <Crosshair className="w-3.5 h-3.5" /> Side Slices (Sagittal)
             </span>
-            <span className="font-mono text-slate-400">Slice: {sagittalIndex} / 127</span>
+            <span className="font-mono text-slate-400">Layer {sagittalIndex} / 127</span>
           </div>
           {renderSliceCanvas(axialData?.mri, axialData?.segmentation)}
-          <input
-            type="range"
-            min="0"
-            max="127"
-            value={sagittalIndex}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSagittalIndex(parseInt(e.target.value))}
-            className="w-full accent-blue-500 cursor-pointer"
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-500 font-medium">Left</span>
+            <input
+              type="range"
+              min="0"
+              max="127"
+              value={sagittalIndex}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setSagittalIndex(parseInt(e.target.value))}
+              className="w-full accent-blue-500 cursor-pointer"
+            />
+            <span className="text-[10px] text-slate-500 font-medium">Right</span>
+          </div>
         </div>
 
         {/* Coronal View */}
-        <div className="space-y-2">
+        <div className="space-y-2 bg-slate-950/40 p-3 rounded-2xl border border-slate-800/80">
           <div className="flex items-center justify-between text-xs font-semibold text-slate-300">
             <span className="flex items-center gap-1.5 text-indigo-400">
-              <Crosshair className="w-3.5 h-3.5" /> Coronal View (Y)
+              <Crosshair className="w-3.5 h-3.5" /> Front-to-Back Slices (Coronal)
             </span>
-            <span className="font-mono text-slate-400">Slice: {coronalIndex} / 127</span>
+            <span className="font-mono text-slate-400">Layer {coronalIndex} / 127</span>
           </div>
           {renderSliceCanvas(axialData?.mri, axialData?.segmentation)}
-          <input
-            type="range"
-            min="0"
-            max="127"
-            value={coronalIndex}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCoronalIndex(parseInt(e.target.value))}
-            className="w-full accent-indigo-500 cursor-pointer"
-          />
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-slate-500 font-medium">Back</span>
+            <input
+              type="range"
+              min="0"
+              max="127"
+              value={coronalIndex}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => setCoronalIndex(parseInt(e.target.value))}
+              className="w-full accent-indigo-500 cursor-pointer"
+            />
+            <span className="text-[10px] text-slate-500 font-medium">Front</span>
+          </div>
         </div>
       </div>
+
     </div>
   );
 }
