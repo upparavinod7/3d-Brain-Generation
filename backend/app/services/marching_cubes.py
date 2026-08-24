@@ -8,7 +8,7 @@ from app.services.segmentor import extract_clean_binary_brain_mask
 def extract_3d_mesh(volume, iso_level=0.12, spacing=(5.98, 0.898, 0.898), target_spacing=(1.0, 1.0, 1.0), step_size=1):
     """
     Extracts a single continuous 3D anatomical brain surface mesh from MRI volume.
-    
+
     Pipeline:
     1. Robust 3D Brain Extraction (skull stripping) -> Binary brain mask (0=bg, 1=brain)
     2. Anisotropic -> Isotropic 1.0mm resampling
@@ -18,11 +18,19 @@ def extract_3d_mesh(volume, iso_level=0.12, spacing=(5.98, 0.898, 0.898), target
     """
     # 1. Obtain clean 3D binary brain mask (0 = background, 1 = brain)
     if volume.dtype == np.uint8 and np.max(volume) <= 1:
+        # Already a binary mask - use as-is
         binary_mask = volume > 0
     else:
         binary_mask = extract_clean_binary_brain_mask(volume) > 0
 
-        
+        # Fallback: if skull stripping yields an empty mask (e.g. very small
+        # synthetic volumes where Otsu fails), use a simple Otsu iso-level
+        # directly on the normalised volume so Marching Cubes is never called
+        # on an all-zero array.
+        if not np.any(binary_mask):
+            norm = (volume - volume.min()) / (volume.max() - volume.min() + 1e-8)
+            binary_mask = norm > iso_level
+
     binary_mask = ndimage.binary_opening(binary_mask, structure=np.ones((2, 2, 2)))
     binary_mask = ndimage.binary_closing(binary_mask, structure=np.ones((3, 3, 3)))
     binary_mask = ndimage.binary_fill_holes(binary_mask)
@@ -31,12 +39,19 @@ def extract_3d_mesh(volume, iso_level=0.12, spacing=(5.98, 0.898, 0.898), target
     zoom_factors = [spacing[i] / target_spacing[i] for i in range(3)]
     resampled_mask = ndimage.zoom(binary_mask.astype(float), zoom_factors, order=1) > 0.45
 
-    # 3. Marching Cubes extraction
+    # Validate foreground before calling Marching Cubes
+    if not np.any(resampled_mask):
+        raise ValueError(
+            "Brain mask is empty after resampling. The volume may be too small "
+            "or contain no extractable brain tissue."
+        )
+
+    # 3. Marching Cubes extraction (on binary mask, level=0.5)
     verts, faces, normals, values = marching_cubes(
         resampled_mask,
         level=0.5,
         spacing=target_spacing,
-        step_size=step_size
+        step_size=step_size,
     )
 
     # 4. Filter connected components (keep largest continuous brain component)
@@ -45,7 +60,7 @@ def extract_3d_mesh(volume, iso_level=0.12, spacing=(5.98, 0.898, 0.898), target
     if len(components) > 0:
         mesh = max(components, key=lambda c: len(c.vertices))
 
-    # 5. Taubin smoothing (preserves anatomical gyri & sulci folds without shrinking)
+    # 5. Taubin smoothing (preserves gyri & sulci, non-shrinking)
     trimesh.smoothing.filter_taubin(mesh, iterations=8)
     mesh.fix_normals()
 
