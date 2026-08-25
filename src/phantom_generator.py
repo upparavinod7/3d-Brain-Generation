@@ -21,7 +21,7 @@ def generate_synthetic_brain(shape=(64, 128, 128)):
     zz, yy, xx = np.meshgrid(z_coords, y_coords, x_coords, indexing='ij')
     
     # Cortical sulci folds perturbation
-    folds = (np.sin(xx * 12.0) * np.cos(yy * 12.0) * Math.sin(zz * 10.0) if hasattr(np, 'sin') else 0)
+    folds = (np.sin(xx * 12.0) * np.cos(yy * 12.0) * np.sin(zz * 10.0) if hasattr(np, 'sin') else 0)
     folds = (np.sin(xx * 12.0) * np.cos(yy * 12.0) * np.sin(zz * 10.0)) * 0.08
 
     # 1. Outer Skull Boundary

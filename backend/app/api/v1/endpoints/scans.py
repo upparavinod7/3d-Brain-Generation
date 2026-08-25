@@ -21,6 +21,7 @@ from app.services.synthetic_brain import generate_synthetic_3d_brain
 from app.services.preprocessor import preprocess_medical_volume
 from app.services.segmentor import segment_brain_tissue, compute_volumetric_statistics
 from app.services.pipeline import pipeline_service
+from app.core.config import settings
 
 router = APIRouter()
 
@@ -104,6 +105,16 @@ async def upload_dicom_scans(files: List[UploadFile] = File(...)):
     vol_stats = compute_volumetric_statistics(seg)
     has_lesion = bool(np.any(seg == 4))
     
+    # Generate 3D surface mesh for uploaded series
+    stl_url = f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.stl"
+    glb_url = f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.glb"
+    try:
+        verts, faces, normals, _ = extract_3d_mesh(vol, iso_level=0.12, spacing=[1.0, 1.0, 1.0], target_spacing=(1.0, 1.0, 1.0), step_size=1)
+        export_mesh_to_formats(verts, faces, normals, base_filename=scan_id)
+        export_mesh_to_formats(verts, faces, normals, base_filename="brain_3d_mesh")
+    except Exception as e:
+        print(f"Mesh generation warning for uploaded scan {scan_id}: {e}")
+
     pipeline = pipeline_service.build_snapshot(
         scan_id=scan_id,
         has_pathology=has_lesion,
@@ -123,6 +134,8 @@ async def upload_dicom_scans(files: List[UploadFile] = File(...)):
         "volumetric_stats": vol_stats,
         "created_at": datetime.datetime.now().isoformat(),
         "pipeline": pipeline,
+        "stl_url": stl_url,
+        "glb_url": glb_url,
     }
     
     SCANS_DB[scan_id] = scan_data
@@ -138,6 +151,8 @@ async def upload_dicom_scans(files: List[UploadFile] = File(...)):
         volumetric_stats=vol_stats,
         created_at=scan_data["created_at"],
         pipeline=pipeline,
+        stl_url=stl_url,
+        glb_url=glb_url,
     )
 
 
@@ -159,6 +174,16 @@ def create_synthetic_scan(request: ScanCreateRequest):
     
     vol_stats = compute_volumetric_statistics(seg, spacing=request.spacing)
     
+    # Generate 3D surface mesh for synthetic scan
+    stl_url = f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.stl"
+    glb_url = f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.glb"
+    try:
+        verts, faces, normals, _ = extract_3d_mesh(vol, iso_level=0.12, spacing=request.spacing, target_spacing=(1.0, 1.0, 1.0), step_size=1)
+        export_mesh_to_formats(verts, faces, normals, base_filename=scan_id)
+        export_mesh_to_formats(verts, faces, normals, base_filename="brain_3d_mesh")
+    except Exception as e:
+        print(f"Mesh generation warning for synthetic scan {scan_id}: {e}")
+
     pipeline = pipeline_service.build_snapshot(
         scan_id=scan_id,
         has_pathology=meta["has_pathology"],
@@ -178,6 +203,8 @@ def create_synthetic_scan(request: ScanCreateRequest):
         "volumetric_stats": vol_stats,
         "created_at": datetime.datetime.now().isoformat(),
         "pipeline": pipeline,
+        "stl_url": stl_url,
+        "glb_url": glb_url,
     }
     
     SCANS_DB[scan_id] = scan_data
@@ -193,6 +220,8 @@ def create_synthetic_scan(request: ScanCreateRequest):
         volumetric_stats=vol_stats,
         created_at=scan_data["created_at"],
         pipeline=pipeline,
+        stl_url=stl_url,
+        glb_url=glb_url,
     )
 
 def get_or_create_scan(scan_id: str):
@@ -209,9 +238,11 @@ def get_or_create_scan(scan_id: str):
             vol_stats = compute_volumetric_statistics(seg, spacing=spacing)
             
             # Generate real 3D mesh surface geometry via Marching Cubes
+            stl_url = f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.stl"
+            glb_url = f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.glb"
             try:
                 verts, faces, normals, resampled_shape = extract_3d_mesh(norm_vol, iso_level=0.12, spacing=spacing, target_spacing=(1.0, 1.0, 1.0), step_size=1)
-                export_mesh_to_formats(verts, faces, normals, base_filename=f"mesh_{scan_id}")
+                export_mesh_to_formats(verts, faces, normals, base_filename=scan_id)
                 export_mesh_to_formats(verts, faces, normals, base_filename="brain_3d_mesh")
             except Exception as e:
                 print(f"Mesh generation warning: {e}")
@@ -230,7 +261,8 @@ def get_or_create_scan(scan_id: str):
                 "pathology_type": "Glioma / Hyperintense Lesion",
                 "volumetric_stats": vol_stats,
                 "created_at": datetime.datetime.now().isoformat(),
-
+                "stl_url": stl_url,
+                "glb_url": glb_url,
                 "pipeline": {
                     "status": "ready",
                     "stage": "reconstruction",
@@ -246,6 +278,15 @@ def get_or_create_scan(scan_id: str):
         else:
             vol, seg, meta = generate_synthetic_3d_brain(shape=(64, 128, 128), has_lesion=True)
             vol_stats = compute_volumetric_statistics(seg)
+            stl_url = f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.stl"
+            glb_url = f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.glb"
+            try:
+                verts, faces, normals, _ = extract_3d_mesh(vol, iso_level=0.12, spacing=meta["spacing"], target_spacing=(1.0, 1.0, 1.0), step_size=1)
+                export_mesh_to_formats(verts, faces, normals, base_filename=scan_id)
+                export_mesh_to_formats(verts, faces, normals, base_filename="brain_3d_mesh")
+            except Exception as e:
+                print(f"Mesh warning: {e}")
+
             SCANS_DB[scan_id] = {
                 "scan_id": scan_id,
                 "status": "ready",
@@ -258,6 +299,8 @@ def get_or_create_scan(scan_id: str):
                 "pathology_type": "Glioma / Hyperintense Lesion",
                 "volumetric_stats": vol_stats,
                 "created_at": datetime.datetime.now().isoformat(),
+                "stl_url": stl_url,
+                "glb_url": glb_url,
                 "pipeline": {
                     "status": "ready",
                     "stage": "reconstruction",
@@ -287,6 +330,8 @@ def get_scan(scan_id: str):
         volumetric_stats=s["volumetric_stats"],
         created_at=s["created_at"],
         pipeline=s["pipeline"],
+        stl_url=s.get("stl_url", f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.stl"),
+        glb_url=s.get("glb_url", f"{settings.BACKEND_PUBLIC_URL}/static/outputs/{scan_id}.glb"),
     )
 
 @router.get("/{scan_id}/slice/{axis}/{slice_index}")

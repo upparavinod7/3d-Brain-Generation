@@ -23,14 +23,17 @@ export default function Navbar() {
         </Link>
 
         <nav className="hidden items-center gap-1 rounded-full border border-white/10 bg-white/5 p-1 md:flex">
-          <Link href="/viewer" className={`rounded-full px-4 py-2 text-xs font-bold transition ${isActive('/viewer') ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
-            🧠 3D Viewer Studio
+          <Link href="/viewer" className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition ${isActive('/viewer') ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
+            <Brain className="h-3.5 w-3.5 text-cyan-400" />
+            3D Viewer Studio
           </Link>
-          <Link href="/upload" className={`rounded-full px-4 py-2 text-xs font-bold transition ${isActive('/upload') ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
-            📤 Upload MRI Scan
+          <Link href="/upload" className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition ${isActive('/upload') ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
+            <Upload className="h-3.5 w-3.5 text-cyan-400" />
+            Upload MRI Scan
           </Link>
-          <Link href="/docs" className={`rounded-full px-4 py-2 text-xs font-bold transition ${isActive('/docs') ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
-            📖 Guide & Docs
+          <Link href="/docs" className={`flex items-center gap-1.5 rounded-full px-4 py-2 text-xs font-bold transition ${isActive('/docs') ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30' : 'text-slate-300 hover:bg-white/5 hover:text-white'}`}>
+            <FileText className="h-3.5 w-3.5 text-cyan-400" />
+            Guide & Docs
           </Link>
         </nav>
 

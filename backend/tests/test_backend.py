@@ -6,7 +6,9 @@ from app.services.preprocessor import preprocess_medical_volume
 from app.services.segmentor import segment_brain_tissue, compute_dice_coefficient, compute_volumetric_statistics
 from app.services.marching_cubes import extract_3d_mesh, export_mesh_to_formats
 
-client = TestClient(app)
+from app.core.config import settings
+
+client = TestClient(app, headers={"X-API-Key": settings.API_KEY})
 
 def test_health_check():
     response = client.get("/api/v1/health")
@@ -72,4 +74,15 @@ def test_reconstruction_api():
     assert "Proposed" in rec_data["method"]
     assert "PSNR (dB)" in rec_data["metrics"]
     assert rec_data["metrics"]["PSNR (dB)"] > 0
+
+def test_api_key_security():
+    # Unauthenticated client without API key header
+    unauth_client = TestClient(app)
+    unauth_resp = unauth_client.post("/api/v1/scans/synthetic", json={"shape": [16, 32, 32]})
+    assert unauth_resp.status_code == 401
+    
+    # Client with invalid API key
+    invalid_client = TestClient(app, headers={"X-API-Key": "invalid_fake_key_12345"})
+    invalid_resp = invalid_client.post("/api/v1/scans/synthetic", json={"shape": [16, 32, 32]})
+    assert invalid_resp.status_code == 403
 

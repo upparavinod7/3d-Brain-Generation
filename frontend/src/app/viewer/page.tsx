@@ -4,9 +4,9 @@ import React, { useEffect, useState, Suspense } from 'react';
 import BrainCanvas from '@/components/viewer3d/BrainCanvas';
 import OrthogonalViewer from '@/components/sliceViewer/OrthogonalViewer';
 import { useSearchParams } from 'next/navigation';
-import { createSyntheticScan, triggerReconstruction, getScan } from '@/lib/api';
+import { createSyntheticScan, triggerReconstruction, getScan, BACKEND_URL } from '@/lib/api';
 import { ScanData, ReconstructionData } from '@/types';
-import { Activity, Cpu, Download, FileText, Layers, Sparkles, Sliders, CheckCircle2, Play, Info } from 'lucide-react';
+import { Activity, Cpu, Download, FileText, Layers, Sparkles, Sliders, CheckCircle2, Play, Info, Brain, AlertTriangle, Zap, Bot, Palette, Droplets, Box, Printer } from 'lucide-react';
 
 function WorkstationContent() {
 
@@ -53,6 +53,8 @@ function WorkstationContent() {
     try {
       const res = await triggerReconstruction(scan.scan_id, selectedMethod, downsampleFactor);
       setRecResults(res);
+      const updatedScan = await getScan(scan.scan_id);
+      setScan(updatedScan);
     } catch (e) {
       console.error('Reconstruction error:', e);
     } finally {
@@ -90,20 +92,22 @@ function WorkstationContent() {
               <span className="px-2 text-slate-400">Sample Mode:</span>
               <button
                 onClick={() => loadScan(false)}
-                className={`rounded-xl px-3 py-1.5 transition ${!hasLesion ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/40' : 'text-slate-400 hover:text-white'}`}
+                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition ${!hasLesion ? 'bg-emerald-500/20 text-emerald-300 font-semibold border border-emerald-500/40' : 'text-slate-400 hover:text-white'}`}
               >
-                🟢 Healthy Brain
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                Healthy Brain
               </button>
               <button
                 onClick={() => loadScan(true)}
-                className={`rounded-xl px-3 py-1.5 transition ${hasLesion ? 'bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/40' : 'text-slate-400 hover:text-white'}`}
+                className={`flex items-center gap-1.5 rounded-xl px-3 py-1.5 transition ${hasLesion ? 'bg-rose-500/20 text-rose-300 font-semibold border border-rose-500/40' : 'text-slate-400 hover:text-white'}`}
               >
-                🔴 Brain with Tumor
+                <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                Brain with Tumor
               </button>
             </div>
 
             <a
-              href={`http://localhost:8000/api/v1/reports/${scan?.scan_id || 'demo'}/pdf`}
+              href={`${BACKEND_URL}/api/v1/reports/${scan?.scan_id || 'demo'}/pdf`}
               target="_blank"
               rel="noreferrer"
               className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 px-4 py-2 text-xs font-bold text-slate-950 hover:opacity-90 transition shadow-lg"
@@ -129,11 +133,11 @@ function WorkstationContent() {
 
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
-            { id: 'proposed', title: 'Proposed AI Model ⭐', desc: 'Trilinear + 3D CNN refinement (Best clarity & accuracy)' },
-            { id: 'trilinear', title: 'Fast 3D Trilinear ⚡', desc: 'Mathematical interpolation (Fast baseline)' },
-            { id: 'cnn', title: '3D CNN Deep Learning 🤖', desc: 'Pure convolutional super-resolution' },
-            { id: 'gan', title: 'Generative AI (3D GAN) 🎨', desc: 'Generative adversarial reconstruction' },
-          ].map(({ id, title, desc }) => (
+            { id: 'proposed', title: 'Proposed AI Model', icon: Sparkles, iconColor: 'text-amber-400', desc: 'Trilinear + 3D CNN refinement (Best clarity & accuracy)' },
+            { id: 'trilinear', title: 'Fast 3D Trilinear', icon: Zap, iconColor: 'text-cyan-400', desc: 'Mathematical interpolation (Fast baseline)' },
+            { id: 'cnn', title: '3D CNN Deep Learning', icon: Bot, iconColor: 'text-blue-400', desc: 'Pure convolutional super-resolution' },
+            { id: 'gan', title: 'Generative AI (3D GAN)', icon: Palette, iconColor: 'text-purple-400', desc: 'Generative adversarial reconstruction' },
+          ].map(({ id, title, icon: IconComp, iconColor, desc }) => (
             <button
               key={id}
               onClick={() => setSelectedMethod(id as any)}
@@ -144,7 +148,10 @@ function WorkstationContent() {
               }`}
             >
               <div className="flex items-center justify-between font-semibold text-xs mb-1">
-                <span>{title}</span>
+                <span className="flex items-center gap-1.5">
+                  <IconComp className={`w-3.5 h-3.5 ${iconColor}`} />
+                  {title}
+                </span>
                 {selectedMethod === id && <CheckCircle2 className="h-3.5 w-3.5 text-cyan-300" />}
               </div>
               <span className="text-[11px] leading-relaxed text-slate-400">{desc}</span>
@@ -190,6 +197,8 @@ function WorkstationContent() {
         {/* 3D Viewport */}
         <div className="space-y-4">
           <BrainCanvas
+            key={`${scan?.scan_id || 'demo'}-${recResults ? recResults.method : 'init'}`}
+            stlUrl={scan?.stl_url || (scan?.scan_id ? `${BACKEND_URL}/static/outputs/${scan.scan_id}.stl` : `${BACKEND_URL}/static/outputs/brain_3d_mesh.stl`)}
             hasLesion={hasLesion}
             opacity={opacity}
             setOpacity={setOpacity}
@@ -271,8 +280,9 @@ function WorkstationContent() {
               </div>
 
               {recResults && (
-                <div className="rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-3 text-xs text-cyan-300 font-medium">
-                  ✅ {recResults.message}
+                <div className="flex items-center gap-2 rounded-2xl border border-cyan-400/30 bg-cyan-500/10 p-3 text-xs text-cyan-300 font-medium">
+                  <CheckCircle2 className="h-4 w-4 text-cyan-300 shrink-0" />
+                  <span>{recResults.message}</span>
                 </div>
               )}
             </div>
@@ -287,24 +297,39 @@ function WorkstationContent() {
                 </h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                    <span className="text-slate-300 font-medium">🧠 Total Brain Volume</span>
+                    <span className="text-slate-300 font-medium flex items-center gap-1.5">
+                      <Brain className="w-3.5 h-3.5 text-cyan-400" />
+                      Total Brain Volume
+                    </span>
                     <span className="font-bold text-white">{stats?.total_brain_volume_cm3 ?? 1350.5} cm³</span>
                   </div>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                    <span className="text-slate-300 font-medium">🩶 Grey Matter (Thinking Layer)</span>
+                    <span className="text-slate-300 font-medium flex items-center gap-1.5">
+                      <Activity className="w-3.5 h-3.5 text-emerald-400" />
+                      Grey Matter (Thinking Layer)
+                    </span>
                     <span className="font-bold text-white">{stats?.grey_matter_volume_cm3 ?? 620.2} cm³</span>
                   </div>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                    <span className="text-slate-300 font-medium">⚪ White Matter (Nerve Connections)</span>
+                    <span className="text-slate-300 font-medium flex items-center gap-1.5">
+                      <Layers className="w-3.5 h-3.5 text-slate-300" />
+                      White Matter (Nerve Connections)
+                    </span>
                     <span className="font-bold text-white">{stats?.white_matter_volume_cm3 ?? 530.8} cm³</span>
                   </div>
                   <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                    <span className="text-slate-300 font-medium">💧 Brain Fluid (CSF Protection)</span>
+                    <span className="text-slate-300 font-medium flex items-center gap-1.5">
+                      <Droplets className="w-3.5 h-3.5 text-cyan-300" />
+                      Brain Fluid (CSF Protection)
+                    </span>
                     <span className="font-bold text-white">{stats?.csf_volume_cm3 ?? 175.5} cm³</span>
                   </div>
                   {hasLesion && (
                     <div className="flex items-center justify-between pt-1">
-                      <span className="text-rose-300 font-bold">🔴 Tumor / Lesion Area</span>
+                      <span className="text-rose-300 font-bold flex items-center gap-1.5">
+                        <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+                        Tumor / Lesion Area
+                      </span>
                       <span className="font-extrabold text-rose-400">{stats?.lesion_volume_cm3 ?? 24.0} cm³</span>
                     </div>
                   )}
@@ -319,39 +344,48 @@ function WorkstationContent() {
               <div className="rounded-2xl border border-white/10 bg-slate-900/50 p-4 space-y-3">
                 <h3 className="font-bold text-white uppercase tracking-wider mb-2">Export 3D Models & Reports</h3>
                 <a
-                  href="http://localhost:8000/static/outputs/brain_3d_mesh.glb"
+                  href={scan?.glb_url || `${BACKEND_URL}/static/outputs/${scan?.scan_id || 'brain_3d_mesh'}.glb`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 text-slate-200 hover:bg-cyan-500/10 hover:border-cyan-500/40 transition"
                 >
                   <div>
-                    <div className="font-semibold text-white">🧊 3D Web Model (GLB)</div>
+                    <div className="font-semibold text-white flex items-center gap-1.5">
+                      <Box className="w-4 h-4 text-cyan-400" />
+                      3D Web Model (GLB)
+                    </div>
                     <div className="text-[10px] text-slate-400">For web apps & 3D viewers</div>
                   </div>
                   <span className="text-cyan-300 font-bold">Download</span>
                 </a>
 
                 <a
-                  href="http://localhost:8000/static/outputs/brain_3d_mesh.stl"
+                  href={scan?.stl_url || `${BACKEND_URL}/static/outputs/${scan?.scan_id || 'brain_3d_mesh'}.stl`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 text-slate-200 hover:bg-cyan-500/10 hover:border-cyan-500/40 transition"
                 >
                   <div>
-                    <div className="font-semibold text-white">🖨️ 3D Printable File (STL)</div>
+                    <div className="font-semibold text-white flex items-center gap-1.5">
+                      <Printer className="w-4 h-4 text-cyan-400" />
+                      3D Printable File (STL)
+                    </div>
                     <div className="text-[10px] text-slate-400">For 3D printing anatomical models</div>
                   </div>
                   <span className="text-cyan-300 font-bold">Download</span>
                 </a>
 
                 <a
-                  href={`http://localhost:8000/api/v1/reports/${scan?.scan_id || 'demo'}/pdf`}
+                  href={`${BACKEND_URL}/api/v1/reports/${scan?.scan_id || 'demo'}/pdf`}
                   target="_blank"
                   rel="noreferrer"
                   className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-3 text-slate-200 hover:bg-cyan-500/10 hover:border-cyan-500/40 transition"
                 >
                   <div>
-                    <div className="font-semibold text-white">📄 Clinical PDF Report</div>
+                    <div className="font-semibold text-white flex items-center gap-1.5">
+                      <FileText className="w-4 h-4 text-cyan-400" />
+                      Clinical PDF Report
+                    </div>
                     <div className="text-[10px] text-slate-400">Complete anatomical report for doctors</div>
                   </div>
                   <span className="text-cyan-300 font-bold">Download</span>

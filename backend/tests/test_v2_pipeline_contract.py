@@ -1,7 +1,8 @@
 from fastapi.testclient import TestClient
 from app.main import app
+from app.core.config import settings
 
-client = TestClient(app)
+client = TestClient(app, headers={"X-API-Key": settings.API_KEY})
 
 
 def test_synthetic_scan_exposes_pipeline_metadata():

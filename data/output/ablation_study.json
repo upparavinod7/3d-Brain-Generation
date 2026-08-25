@@ -12,10 +12,10 @@
         "MSE": 0.020306
     },
     "C. Standalone 3D CNN": {
-        "PSNR (dB)": 16.9317,
-        "SSIM": 0.3831,
-        "MAE": 0.084071,
-        "MSE": 0.020269
+        "PSNR (dB)": 16.6781,
+        "SSIM": 0.4566,
+        "MAE": 0.085832,
+        "MSE": 0.021488
     },
     "D. Proposed (Tri+CNN)": {
         "PSNR (dB)": 17.7776,

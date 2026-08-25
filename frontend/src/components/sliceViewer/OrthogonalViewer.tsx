@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Eye, EyeOff, Crosshair, Layers } from 'lucide-react';
+import { Eye, EyeOff, Crosshair, Layers, AlertTriangle, Activity, Droplets } from 'lucide-react';
 import { fetchScanSlice } from '@/lib/api';
 import { SliceData } from '@/types';
 
@@ -32,8 +32,6 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
   useEffect(() => {
     fetchScanSlice(scanId, 'coronal', coronalIndex).then(setSagittalData);
   }, [scanId, coronalIndex]);
-
-
 
   // Render 2D Slice Canvas
   const renderSliceCanvas = (matrix: number[][] | undefined, segMatrix: number[][] | undefined) => {
@@ -139,10 +137,10 @@ export default function OrthogonalViewer({ scanId }: OrthogonalViewerProps) {
       {showSegOverlay && (
         <div className="flex flex-wrap items-center gap-4 bg-slate-950/60 p-3 rounded-xl border border-slate-800 text-xs text-slate-300">
           <span className="font-semibold text-slate-400">Color Guide:</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-red-500/90 inline-block" /> 🔴 Tumor / Lesion</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-blue-500/90 inline-block" /> 🔵 White Matter</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-emerald-500/90 inline-block" /> 🟢 Grey Matter</span>
-          <span className="flex items-center gap-1.5"><span className="w-3 h-3 rounded bg-cyan-400/90 inline-block" /> 🩵 Brain Fluid</span>
+          <span className="flex items-center gap-1.5"><AlertTriangle className="w-3.5 h-3.5 text-rose-400" /> Tumor / Lesion</span>
+          <span className="flex items-center gap-1.5"><Layers className="w-3.5 h-3.5 text-blue-400" /> White Matter</span>
+          <span className="flex items-center gap-1.5"><Activity className="w-3.5 h-3.5 text-emerald-400" /> Grey Matter</span>
+          <span className="flex items-center gap-1.5"><Droplets className="w-3.5 h-3.5 text-cyan-400" /> Brain Fluid</span>
         </div>
       )}
 

@@ -83,6 +83,14 @@ def run_3d_reconstruction(scan_id: str, request: ReconstructionRequest):
         
     metrics = evaluate_reconstruction(rec_vol, gt_volume)
     
+    # Regenerate 3D mesh surface for reconstructed volume
+    try:
+        verts, faces, normals, _ = extract_3d_mesh(rec_vol, iso_level=0.12, spacing=s.get("spacing", (1.0, 1.0, 1.0)), target_spacing=(1.0, 1.0, 1.0), step_size=1)
+        export_mesh_to_formats(verts, faces, normals, base_filename=scan_id)
+        export_mesh_to_formats(verts, faces, normals, base_filename="brain_3d_mesh")
+    except Exception as e:
+        print(f"Mesh generation warning for reconstruction {scan_id}: {e}")
+
     # Store reconstructed volume in scan DB for fast slice viewing
     s["volume"] = rec_vol
     s["pipeline"]["stage"] = "reconstruction_complete"

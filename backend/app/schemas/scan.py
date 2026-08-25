@@ -36,6 +36,8 @@ class ScanResponse(BaseModel):
     volumetric_stats: Optional[Dict[str, Any]] = None
     created_at: str
     pipeline: PipelineSnapshot
+    stl_url: Optional[str] = None
+    glb_url: Optional[str] = None
 
 class MeshResponse(BaseModel):
     scan_id: str

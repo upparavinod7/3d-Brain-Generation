@@ -84,7 +84,7 @@ def main():
         
         pred_seg = segment_brain_tissue(proposed_vol)
         stats = compute_volumetric_statistics(pred_seg)
-        verts, faces, normals = extract_3d_mesh(proposed_vol, iso_level=0.25)
+        verts, faces, normals, _ = extract_3d_mesh(proposed_vol, iso_level=0.25)
         mesh_paths = export_mesh_to_formats(verts, faces, normals, base_filename="brain_3d_mesh", output_dir="storage/outputs")
         pdf_path = os.path.join("storage", "outputs", "Clinical_Report.pdf")
         generate_clinical_pdf_report("MAIN-DEMO-01", {"patient_id": "MAIN-USER", "modality": "MR T1"}, stats, pdf_path)

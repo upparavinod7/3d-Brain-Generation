@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
-import { ArrowRight, FileCheck, ShieldCheck, Upload, CheckCircle2, AlertCircle, Layers } from 'lucide-react';
+import { ArrowRight, FileCheck, ShieldCheck, Upload, CheckCircle2, AlertCircle, Layers, Rocket, AlertTriangle } from 'lucide-react';
 import { uploadDicomSeries } from '@/lib/api';
 import { ScanData } from '@/types';
 
@@ -129,7 +129,8 @@ export default function UploadPage() {
                 disabled={status === 'uploading' || status === 'processing'}
                 className="mt-4 w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-blue-500 py-3 text-xs font-extrabold text-slate-950 transition hover:opacity-90 shadow-lg disabled:opacity-50"
               >
-                {status === 'uploading' || status === 'processing' ? 'Processing 3D Brain Scan...' : '🚀 Process & Generate 3D Brain Model'}
+                <Rocket className="h-4 w-4 fill-current" />
+                {status === 'uploading' || status === 'processing' ? 'Processing 3D Brain Scan...' : 'Process & Generate 3D Brain Model'}
               </button>
             </div>
           )}
@@ -178,7 +179,18 @@ export default function UploadPage() {
                     <div>Scan ID: {uploadedScan.scan_id}</div>
                     <div>Dimensions: {uploadedScan.dimensions.join(' × ')}</div>
                     <div>Modality: {uploadedScan.modality}</div>
-                    <div>Pathology Detected: {uploadedScan.has_pathology ? '🔴 Tumor / Lesion Detected' : '🟢 Normal Brain'}</div>
+                    <div className="flex items-center gap-1.5">
+                      <span>Pathology Detected:</span>
+                      {uploadedScan.has_pathology ? (
+                        <span className="text-rose-400 flex items-center gap-1">
+                          <AlertTriangle className="w-3.5 h-3.5" /> Tumor / Lesion Detected
+                        </span>
+                      ) : (
+                        <span className="text-emerald-400 flex items-center gap-1">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Normal Brain
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="mt-3 flex justify-end">
                     <Link href={`/viewer?scan_id=${uploadedScan.scan_id}`} className="inline-flex items-center gap-2 rounded-xl bg-cyan-400 hover:bg-cyan-300 px-4 py-2 text-xs font-bold text-slate-950 transition shadow-md">

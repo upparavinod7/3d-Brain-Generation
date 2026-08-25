@@ -38,6 +38,8 @@ export interface ScanData {
   volumetric_stats?: VolumetricStats;
   created_at: string;
   pipeline?: PipelineSnapshot;
+  stl_url?: string;
+  glb_url?: string;
 }
 
 export interface MeshData {
