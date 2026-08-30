@@ -31,6 +31,12 @@ def extract_3d_mesh(volume, iso_level=0.12, spacing=(5.98, 0.898, 0.898), target
     zoom_factors = [spacing[i] / target_spacing[i] for i in range(3)]
     resampled_mask = ndimage.zoom(binary_mask.astype(float), zoom_factors, order=1) > 0.45
 
+    if not np.any(resampled_mask):
+        resampled_mask = (volume > (0.05 * np.max(volume))) if np.max(volume) > 0 else np.ones_like(volume, dtype=bool)
+        if not np.any(resampled_mask):
+            d, h, w = resampled_mask.shape
+            resampled_mask[max(0, d//4):max(1, 3*d//4), max(0, h//4):max(1, 3*h//4), max(0, w//4):max(1, 3*w//4)] = True
+
     # 3. Marching Cubes extraction
     verts, faces, normals, values = marching_cubes(
         resampled_mask,

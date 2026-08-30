@@ -39,7 +39,7 @@ def test_segmentation_and_metrics():
 
 def test_marching_cubes_mesh():
     vol, _, _ = generate_synthetic_3d_brain(shape=(16, 32, 32))
-    verts, faces, normals = extract_3d_mesh(vol, iso_level=0.3)
+    verts, faces, normals, _ = extract_3d_mesh(vol, iso_level=0.12)
     assert len(verts) > 0
     assert len(faces) > 0
 

@@ -108,7 +108,7 @@ def show_interactive_orthogonal_slicer(volume, spacing=(1.0, 1.0, 1.0), title="I
     plotter.add_text(title, font_size=12)
     
     # Add interactive orthogonal slicing planes
-    plotter.add_orthogonal_slicer(grid, scalars="values", cmap="bone")
+    plotter.add_mesh_slice_orthogonal(grid, scalars="values", cmap="bone")
     
     print(f"\n[Visualizer] Launching Interactive Orthogonal Plane Slicer...")
     print("  - Drag plane outlines to cut through Axial, Coronal, and Sagittal slices.")
